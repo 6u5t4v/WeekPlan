@@ -1,0 +1,32 @@
+[
+  {
+    "title": "Hobby project",
+    "description": "A hobby project I've been working on for a while. It's a simple game where you have to guess the correct number. It's made with React and Redux.",
+    "min_hours_pr_week": 5,
+    "daily": false
+  },
+  {
+    "title": "Scheduled Project",
+    "description": "This project has a limited for when it should be done. It's a simple game where you have to guess the correct number. It's made with React and Redux.",
+    "min_hours_pr_week": 10,
+    "daily": false
+  },
+  {
+    "title": "Hangout with friends",
+    "description": "Time to hangout and do whatever",
+    "min_hours_pr_week": 5,
+    "daily": false
+  },
+  {
+    "title": "Workout",
+    "description": "3x 20 pushups, 3x 20 situps, 3x 20 squats, 5min plank",
+    "min_hours_pr_week": 2,
+    "daily": false
+  },
+  {
+    "title": "Guitar Practice",
+    "description": "Guitar practice",
+    "min_hours_pr_week": 5,
+    "daily": true
+  }
+]
