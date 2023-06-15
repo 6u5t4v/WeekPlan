@@ -38,12 +38,12 @@
   {
     "name": "Offday",
     "description": "A typical offday, I dont have to work/school",
-    "min_breaks": 4,
+    "min_breaks": 0,
     "routines": [
       {
         "name": "morning",
         "start": "09:00:00",
-        "end": "11:00:00",
+        "end": "10:00:00",
         "tasks": [
           "wake up",
           "brush teeth",
@@ -62,7 +62,7 @@
       {
         "name": "bedtime",
         "start": "00:00:00",
-        "end": "02:00:00",
+        "end": "01:00:00",
         "tasks": [
           "shower",
           "brush teeth",
