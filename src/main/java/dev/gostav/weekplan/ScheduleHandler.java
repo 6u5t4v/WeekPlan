@@ -1,221 +1,130 @@
 package dev.gostav.weekplan;
 
-import dev.gostav.weekplan.model.*;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import dev.gostav.weekplan.model.Goal;
+import dev.gostav.weekplan.model.Task;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 
 public class ScheduleHandler {
-    private final JSONParser parser = new JSONParser();
-    private DefaultDay workDay, offDay;
-    private List<Goal> goals = new ArrayList<>();
-    private List<DefaultDay> dailySchedules = new ArrayList<>();
+    public static ScheduleHandler instance;
 
-    public Schedule createSchedule(LocalDate startDate, int days) {
-        Day[] dailyDays = new Day[days];
+    private final List<Goal> GOALS = new ArrayList<>();
+    private final LocalTime[] ROUTINES = {
+            LocalTime.of(10, 0),
+            LocalTime.of(14, 0),
+            LocalTime.of(17, 0),
+            LocalTime.of(20, 30),
+            LocalTime.of(23, 0),
 
-        for (int i = 0; i < days; i++) {
-            LocalDate date = startDate.plusDays(i);
-            if (isWorkday(date)) {
-                dailyDays[i] = new Day(date, workDay);
-            } else {
-                dailyDays[i] = new Day(date, offDay);
-            }
+    };
 
-            Day day = dailyDays[i];
+    Map<Integer, List<Task>> schedule = new HashMap<>();
 
-            // figure out how much time is available between routines
-            float freeTime = day.getFreeTimeInSeconds();
-            float hoursRemaining = freeTime / 3600;
-            System.out.println(date + ": " + hoursRemaining + " free time");
+    private void initializeGoals() {
+        // Add your goals with their respective minimum hours per week
+        GOALS.add(new Goal("Goal 1", 10, true));  // Daily goal
+        GOALS.add(new Goal("Goal 2", 10, false));  // Non-daily goal
+        GOALS.add(new Goal("Goal 3", 10, false));  // Non-daily goal
+        GOALS.add(new Goal("Goal 4", 10, true));   // Daily goal
+        GOALS.add(new Goal("Goal 5", 10, false));  // Non-daily goal
+        GOALS.add(new Goal("Goal 6", 10, true));   // Daily goal
 
-            if (hoursRemaining < 0) {
-                throw new RuntimeException("Free time is negative, not good");
-            }
-
-            // Accounting for daily goals that has to be met every day
-            List<Goal> dailyGoals = getDailyGoals();
-            for (Goal goal : dailyGoals) {
-                float hoursPrDay = (float) goal.getHoursPrWeek() / 7;
-
-                if (hoursPrDay > hoursRemaining) {
-                    throw new RuntimeException("Not enough time to meet daily goal " + goal.getName());
-                }
-
-                hoursRemaining -= hoursPrDay;
-            }
-
-            // Accounting for weekly goals that has to be met every week
-            int maxTasksPrDay = 4;
-            while (hoursRemaining >= 0) {
-                Goal goal = randomGoal();
-                if (day.getTasks().size() == maxTasksPrDay) {
-                    // if there are more than 4 tasks already, don't add more
-                    // tasks
-                    break;
-                }
-
-                float hoursPrDay = goal.getHoursPrWeek() % hoursRemaining + hoursRemaining;
-
-                if (hoursPrDay >= 4) {
-                    // if the goal has more than 4 hours pr day, it has to be
-                    // split across the day
-                    hoursPrDay = ((float) goal.getHoursPrWeek() / 7) % hoursRemaining;
-                }
-
-                goal.setHoursFullFilled(goal.getHoursFullFilled() + hoursPrDay);
-
-                Task task = new Task(goal, LocalTime.of(0, 0));
-            }
-
-//            while (hoursRemaining >= 0) {
-//                Goal goal = randomGoal();
-//
-//                float hoursPrDay = goal.getHoursPrWeek() % hoursRemaining + hoursRemaining;
-////                System.out.println(hoursRemaining + " hours left, adding " + hoursPrDay + " hours of " + goal.getTitle());
-//
-//                if (hoursPrDay >= 4) {
-//                    // if the goal has more than 4 hours pr day, it has to be
-//                    // split across multiple days
-//                    hoursPrDay = ((float) goal.getHoursPrWeek() / 7) % hoursRemaining;
-//                }
-//
-//                hoursRemaining -= hoursPrDay;
-//
-//                float finalHoursPrDay = hoursPrDay;
-//                goal.setHoursFullFilled(goal.getHoursFullFilled() + finalHoursPrDay);
-//
-//                day.addTask(goal);
-//            }
-
-            System.out.println("Hours left: " + hoursRemaining);
+        final int hoursInAWeek = 168;
+        if (getTotalGoalsHours() > hoursInAWeek) {
+            throw new RuntimeException("Total hours of goals exceed the number of hours in a week");
         }
-
-        return new Schedule(startDate, startDate.plusDays(days), dailyDays);
     }
 
-    private Goal randomGoal() {
-        if (goals.isEmpty()) {
-            throw new RuntimeException("No goals");
+    private List<Task> createDaySchedule() {
+        List<Task> tasks = new ArrayList<>();
+
+        int timeOfDay = 0;
+        while (timeOfDay < ROUTINES.length - 1) {
+            LocalTime time = ROUTINES[timeOfDay];
+
+            Goal goal = selectGoal();
+
+            if (goal == null) {
+                System.out.println("All goals have been scheduled");
+                break;
+            }
+
+            int secondsRemaining = goal.getSecondsRemaining();
+
+            try {
+                LocalTime nextRoutine = ROUTINES[timeOfDay + 1];
+                long untilNextTask = time.until(nextRoutine, ChronoUnit.SECONDS);
+
+                secondsRemaining = Math.min(secondsRemaining, (int) (untilNextTask - 60 * 30));
+            } catch (Exception e) {
+                System.out.println("No more routines for today");
+            }
+
+            goal.subtractSeconds(secondsRemaining);
+
+            int hours = secondsRemaining / 3600;
+            Task task = new Task(goal, time, time.plusHours(hours));
+            tasks.add(task);
+
+            timeOfDay++;
         }
 
-        List<Goal> validGoals = notFullfilledGoals();
-        if (validGoals.isEmpty()) {
-            validGoals = new ArrayList<>(goals);
-        }
-
-        int index = (int) (Math.random() * validGoals.size());
-        return (Goal) validGoals.toArray()[index];
+        return tasks;
     }
 
-    private List<Goal> notFullfilledGoals() {
-        return goals.stream()
-                .filter(g -> g.getHoursFullFilled() < g.getHoursPrWeek())
-                .toList();
+    public Map<Integer, List<Task>> createSchedule() {
+        for (int day = 1; day <= 7; day++) {
+            schedule.put(day, createDaySchedule());
+        }
+
+        return schedule;
     }
 
     private List<Goal> getDailyGoals() {
-        return goals.stream().filter(Goal::isDaily).toList();
+        List<Goal> dailyGoals = new ArrayList<>();
+        for (Goal g : GOALS) {
+            if (g.isDailyGoal()) {
+                dailyGoals.add(g);
+            }
+        }
+
+        return dailyGoals;
     }
 
-    public void initTasks(File file) {
-        JSONArray ja;
-        try {
-            Object json = parser.parse(new FileReader(file));
-            ja = (JSONArray) json;
-        } catch (IOException | ParseException e) {
-            throw new RuntimeException(e);
+    private int getTotalGoalsHours() {
+        int totalHours = 0;
+        for (Goal g : GOALS) {
+            totalHours += g.getMinHoursPerWeek();
         }
 
-        for (Object o : ja) {
-            JSONObject task = (JSONObject) o;
-
-            String title = (String) task.get("title");
-            String description = (String) task.getOrDefault("description", "");
-            long minHoursPrWeek = (long) task.get("min_hours_pr_week");
-            boolean isDaily = (boolean) task.getOrDefault("daily", false);
-
-            Goal t = new Goal(title, description, (int) minHoursPrWeek, isDaily);
-            goals.add(t);
-        }
-
-        System.out.println("Goals: " + goals.size());
+        return totalHours;
     }
 
-    public void initDefaultSchedules(File file) {
-        JSONArray ja;
-        try {
-            Object json = parser.parse(new FileReader(file));
-            ja = (JSONArray) json;
-        } catch (IOException | ParseException e) {
-            throw new RuntimeException(e);
+    private Goal selectGoal() {
+        List<Goal> validGoals = GOALS.stream().filter(g -> !g.isComplete()).toList();
+
+        if (validGoals.isEmpty()) {
+            return null;
         }
 
-        for (Object o : ja) {
-            JSONObject schedule = (JSONObject) o;
-
-            String name = (String) schedule.get("name");
-            String description = (String) schedule.get("description");
-
-            JSONArray jsonRoutinesArray = (JSONArray) schedule.get("routines");
-
-            DefaultDay defaultDefaultDay = new DefaultDay(name, description);
-            dailySchedules.add(defaultDefaultDay);
-
-            List<Routine> routines = loadRoutines(jsonRoutinesArray);
-            defaultDefaultDay.setRoutines(routines);
-        }
-
-        workDay = dailySchedules.get(0);
-        offDay = dailySchedules.get(1);
-        System.out.println("Schedules: " + dailySchedules.size());
+        int randomIndex = (int) (Math.random() * validGoals.size());
+        return validGoals.get(randomIndex);
     }
 
-    private List<Routine> loadRoutines(JSONArray json) {
-        List<Routine> rountines = new ArrayList<>();
-
-        for (Object rObj : json) {
-            JSONObject routine = (JSONObject) rObj;
-
-            String routineName = (String) routine.get("name");
-            LocalTime startTime = LocalTime.parse((String) routine.get("start"));
-
-            Routine r = new Routine(routineName, startTime);
-
-            rountines.add(r);
+    public static ScheduleHandler getInstance() {
+        if (instance == null) {
+            instance = new ScheduleHandler();
         }
-
-        return rountines;
+        return instance;
     }
 
-//    private List<Task> loadTasks(JSONArray json) {
-//        List<Task> tasks = new ArrayList<>();
-//
-//        for (Object o : json) {
-//            String taskName = (String) o;
-//
-//            Task task = goals.stream()
-//                    .filter(g -> g.getName().equals(taskName))
-//                    .findFirst()
-//                    .orElse(new Goal(taskName, "", 0, false));
-//
-//            tasks.add(task);
-//        }
-//
-//        return tasks;
-//    }
-
-
-    private boolean isWorkday(LocalDate date) {
-        return date.getDayOfWeek().getValue() < 6;
+    private ScheduleHandler() {
+        initializeGoals();
     }
 }

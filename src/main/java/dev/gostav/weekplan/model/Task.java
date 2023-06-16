@@ -1,18 +1,25 @@
 package dev.gostav.weekplan.model;
 
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 
 public class Task {
     private final Goal goal;
-    private final LocalTime startTime;
+    private LocalTime startTime, endTime;
 
-    public Task(Goal goal, LocalTime startTime) {
+    public Task(Goal goal, LocalTime startTime, LocalTime endTime) {
         this.goal = goal;
         this.startTime = startTime;
+        this.endTime = endTime;
     }
 
-    public String getName() {
-        return goal.getName();
+    public float getHours() {
+        // If endTime is before startTime, then the task is scheduled to the next day
+        if (startTime.getHour() > endTime.getHour()) {
+            return startTime.until(endTime, ChronoUnit.HOURS) + 1;
+        }
+
+        return endTime.getHour() - startTime.getHour();
     }
 
     public Goal getGoal() {
@@ -23,7 +30,7 @@ public class Task {
         return startTime;
     }
 
-    public int getDurationInSeconds() {
-        return (int) (goal.getHoursFullFilled() * 3600);
+    public LocalTime getEndTime() {
+        return endTime;
     }
 }

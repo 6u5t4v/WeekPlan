@@ -1,39 +1,42 @@
 package dev.gostav.weekplan.model;
 
 public class Goal {
-    private String name, description;
-    private int hoursPrWeek;
-    private float hoursFullFilled;
-    private boolean daily;
+    private final String name;
+    private int minHoursPerWeek, secondsRemaning;
+    private final boolean isDailyGoal;
 
-    public Goal(String name, String description, int hoursPrWeek, boolean daily) {
+    public Goal(String name, int minHoursPerWeek, boolean isDailyGoal) {
         this.name = name;
-        this.description = description;
-        this.hoursPrWeek = hoursPrWeek;
-        this.daily = daily;
+        this.minHoursPerWeek = minHoursPerWeek;
+        this.secondsRemaning = minHoursPerWeek * 60 * 60;
+        this.isDailyGoal = isDailyGoal;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getDescription() {
-        return description;
+    public int getMinHoursPerWeek() {
+        return minHoursPerWeek;
     }
 
-    public int getHoursPrWeek() {
-        return hoursPrWeek;
+    public boolean isDailyGoal() {
+        return isDailyGoal;
     }
 
-    public boolean isDaily() {
-        return daily;
+    public int getSecondsRemaining() {
+        return secondsRemaning;
     }
 
-    public float getHoursFullFilled() {
-        return hoursFullFilled;
+    public void subtractSeconds(int seconds) {
+        this.secondsRemaning -= seconds;
+
+        if (isComplete()) {
+            System.out.println("Goal " + name + " is complete");
+        }
     }
 
-    public void setHoursFullFilled(float hours) {
-        this.hoursFullFilled = hours;
+    public boolean isComplete() {
+        return secondsRemaning <= 0;
     }
 }
