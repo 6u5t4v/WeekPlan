@@ -1,21 +1,20 @@
 package dev.gostav.weekplan.model;
 
-public class Goal extends Task {
-    private String description;
+public class Goal {
+    private String name, description;
     private int hoursPrWeek;
     private float hoursFullFilled;
     private boolean daily;
 
-    public Goal(String title, String description, int hoursPrWeek, boolean daily) {
-        super(title);
+    public Goal(String name, String description, int hoursPrWeek, boolean daily) {
+        this.name = name;
         this.description = description;
         this.hoursPrWeek = hoursPrWeek;
         this.daily = daily;
     }
 
-    @Override
-    public int getDurationInSeconds() {
-        return super.getDurationInSeconds();
+    public String getName() {
+        return name;
     }
 
     public String getDescription() {

@@ -6,17 +6,12 @@ import java.util.List;
 
 public class Routine {
     private String name;
-    private LocalTime startTime, endTime;
+    private LocalTime startTime;
     private List<Task> tasks = new ArrayList<>();
 
-    public Routine(String routineName, LocalTime startTime, LocalTime endTime) {
+    public Routine(String routineName, LocalTime startTime) {
         this.name = routineName;
         this.startTime = startTime;
-        this.endTime = endTime;
-    }
-
-    public int getDurationInSeconds() {
-        return endTime.toSecondOfDay() - startTime.toSecondOfDay();
     }
 
     public String getName() {
@@ -25,10 +20,6 @@ public class Routine {
 
     public LocalTime getStartTime() {
         return startTime;
-    }
-
-    public LocalTime getEndTime() {
-        return endTime;
     }
 
     public List<Task> getTasks() {

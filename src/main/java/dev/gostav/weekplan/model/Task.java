@@ -1,17 +1,29 @@
 package dev.gostav.weekplan.model;
 
-public class Task {
-    private String title;
+import java.time.LocalTime;
 
-    public Task(String title) {
-        this.title = title;
+public class Task {
+    private final Goal goal;
+    private final LocalTime startTime;
+
+    public Task(Goal goal, LocalTime startTime) {
+        this.goal = goal;
+        this.startTime = startTime;
     }
 
-    public String getTitle() {
-        return title;
+    public String getName() {
+        return goal.getName();
+    }
+
+    public Goal getGoal() {
+        return goal;
+    }
+
+    public LocalTime getStartTime() {
+        return startTime;
     }
 
     public int getDurationInSeconds() {
-        return 0;
+        return (int) (goal.getHoursFullFilled() * 3600);
     }
 }

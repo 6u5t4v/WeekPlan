@@ -14,10 +14,11 @@ public class WeekPlanApp {
         File schedulesFile = new File("src/main/resources/schedules.json");
 
         ScheduleHandler handler = new ScheduleHandler();
-        handler.initGoals(tasksFile);
+        handler.initTasks(tasksFile);
         handler.initDefaultSchedules(schedulesFile);
 
         LocalDate startDate = LocalDate.now().with(previousOrSame(DayOfWeek.MONDAY));
         Schedule schedule = handler.createSchedule(startDate, 7);
+        schedule.printSchedule();
     }
 }
