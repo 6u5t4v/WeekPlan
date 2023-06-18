@@ -2,10 +2,7 @@ package dev.gostav.weekplan.model;
 
 import java.time.LocalDate;
 import java.time.format.TextStyle;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 public class Schedule {
     private LocalDate startDate, endDate;
@@ -99,5 +96,9 @@ public class Schedule {
 
     public LocalDate getEndDate() {
         return endDate;
+    }
+
+    public Map<Integer, List<Task>> getSchedule() {
+        return new HashMap<>(schedule);
     }
 }

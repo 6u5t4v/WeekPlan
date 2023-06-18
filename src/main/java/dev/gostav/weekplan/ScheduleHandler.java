@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -86,44 +87,43 @@ public class ScheduleHandler {
         }
     }
 
-    private List<Task> createDaySchedule(LocalDate date) {
+    public List<Task> createDaySchedule(LocalDate date) {
         List<Task> tasks = new ArrayList<>();
-        List<Goal> dailyGoals = new ArrayList<>();
+        Map<Goal, Float> dailyGoals = new HashMap<>();
 
         int timeOfDay = 0;
 
         Goal goal = null;
-        int maxSeconds = 0;
+        float hoursToAdd = 0;
 
-        // this is sooo dumb, but it works for now
         int dayPlan = isOffday(date) ? 1 : 0;
         LocalTime[] routines = plans.get(dayPlan).getRoutines();
 
         while (timeOfDay < routines.length) {
-            LocalTime time = routines[timeOfDay];
-            LocalTime nextRoutine;
+            LocalDateTime time = date.atTime(routines[timeOfDay]);
+            LocalDateTime nextRoutine;
             try {
-                nextRoutine = routines[timeOfDay + 1];
+                nextRoutine = date.atTime(routines[timeOfDay + 1]);
             } catch (ArrayIndexOutOfBoundsException e) {
-                nextRoutine = plans.get(dayPlan).getNight();
+                nextRoutine = date.atTime(plans.get(dayPlan).getNight());
+                if (nextRoutine.isBefore(time)) {
+                    nextRoutine = nextRoutine.plusDays(1);
+                }
             }
-
-            // amount of seconds to spend on this goal during this routine
-            int seconds;
 
             // the subtraction of 30 minutes is to make sure that the next routine is not too close
             long untilNextTask = time.until(nextRoutine, ChronoUnit.SECONDS) - Time.toSeconds(0.5f);
+            float hoursUntilNextTask = Time.toHours((int) untilNextTask);
 
             // if there is less than 1 hour left from previous routine, reset maxSeconds
-            if (maxSeconds < 3600) {
+            if (hoursToAdd < 1) {
                 // max seconds is a random number between 1 and 5 hours
-                maxSeconds = (int) (Math.random() * (Time.toSeconds(5))) + 3600;
+                hoursToAdd = (float) (Math.random() * 5) + 1;
                 goal = null;
             }
 
-
-            seconds = (int) Math.min(maxSeconds, untilNextTask);
-            maxSeconds -= seconds;
+            float hours = Math.min(hoursToAdd, hoursUntilNextTask);
+            hoursToAdd -= hours;
 
             // goal is null if it is the first routine of the day or if the maxSeconds has been reached
             if (goal == null) {
@@ -131,16 +131,17 @@ public class ScheduleHandler {
                 goal = selectGoal();
             }
 
-            if (goal.getMaxHoursPerDay() != -1 && seconds > Time.toSeconds(goal.getMaxHoursPerDay())) {
-                seconds = Time.toSeconds(goal.getMaxHoursPerDay());
-                maxSeconds = 0;
+            float hoursScheduled = dailyGoals.getOrDefault(goal, 0f);
+            if (hoursScheduled + hours > goal.getMaxHoursPerDay()) {
+                goal = selectGoal();
             }
 
-            goal.scheduleWithSeconds(seconds);
+            goal.addHours(hours);
 
-            Task task = new Task(goal, time, time.plusSeconds(seconds));
+            LocalTime start = LocalTime.from(date.atTime(routines[timeOfDay]));
+            Task task = new Task(goal, start, start.plusSeconds(Time.toSeconds(hours)));
             tasks.add(task);
-            dailyGoals.add(goal);
+            dailyGoals.merge(goal, hours, Float::sum);
 
             timeOfDay++;
         }
@@ -148,7 +149,7 @@ public class ScheduleHandler {
         return tasks;
     }
 
-    private boolean isOffday(LocalDate date) {
+    public boolean isOffday(LocalDate date) {
         return date.getDayOfWeek().getValue() == 6 || date.getDayOfWeek().getValue() == 7;
     }
 
@@ -174,7 +175,7 @@ public class ScheduleHandler {
         return new Schedule(startDate, endDate, schedule);
     }
 
-    private int getTotalGoalsHours() {
+    public int getTotalGoalsHours() {
         int totalHours = 0;
         for (Goal g : goals) {
             totalHours += g.getMinHoursPerWeek();
@@ -183,11 +184,37 @@ public class ScheduleHandler {
         return totalHours;
     }
 
-    private Goal selectGoal() {
+    public Goal selectGoal() {
         List<Goal> validGoals = goals.stream().filter(g -> !g.isComplete()).toList();
 
+        if (validGoals.isEmpty()) {
+            validGoals = new ArrayList<>(goals);
+        }
 
         int randomIndex = (int) (Math.random() * validGoals.size());
         return validGoals.get(randomIndex);
+    }
+
+    public static JSONParser getJsonParser() {
+        return JsonParser;
+    }
+
+    public List<Goal> getGoals() {
+        return new ArrayList<>(goals);
+    }
+
+    public List<DayPlan> getPlans() {
+        return new ArrayList<>(plans);
+    }
+
+    public int getTotalHoursScheduled(Schedule schedule) {
+        int totalHours = 0;
+        for (List<Task> tasks : schedule.getSchedule().values()) {
+            for (Task task : tasks) {
+                totalHours += task.getHours();
+            }
+        }
+
+        return totalHours;
     }
 }

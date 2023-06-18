@@ -17,7 +17,6 @@ public class Task {
 
     public float getHours() {
         int durationInSeconds = (int) (startTime.until(endTime, ChronoUnit.SECONDS) + 1);
-
         return Time.toHours(durationInSeconds);
     }
 

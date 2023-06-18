@@ -5,7 +5,7 @@ import dev.gostav.weekplan.Time;
 public class Goal {
     private final String name;
     private final int minHoursPerWeek;
-    private int secondsScheduled;
+    private float hoursScheduled;
     private final boolean isDailyGoal;
     private final int maxHoursPerDay;
 
@@ -28,16 +28,8 @@ public class Goal {
         return isDailyGoal;
     }
 
-    public int getSecondsScheduled() {
-        return secondsScheduled;
-    }
-
-    public void scheduleWithSeconds(int seconds) {
-        this.secondsScheduled += seconds;
-
-        if (isComplete()) {
-            System.out.println("Goal " + name + " is overtime by " + Math.abs(secondsScheduled) + " seconds");
-        }
+    public void addHours(float hours) {
+        this.hoursScheduled += hours;
     }
 
     public int getMaxHoursPerDay() {
@@ -45,10 +37,10 @@ public class Goal {
     }
 
     public boolean isComplete() {
-        return secondsScheduled >= Time.toSeconds(minHoursPerWeek);
+        return hoursScheduled >= minHoursPerWeek;
     }
 
     public float getHoursScheduled() {
-        return Time.toHours(secondsScheduled);
+        return Time.toHoursFormatted(hoursScheduled);
     }
 }
