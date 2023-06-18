@@ -33,4 +33,13 @@ public class Task {
     public LocalTime getEndTime() {
         return endTime;
     }
+
+    public String formatted() {
+        return startTime + " - " + endTime + " (" + getHours() + " hours)" + "\n        " + goal.getName();
+    }
+
+    @Override
+    public String toString() {
+        return startTime + " - " + endTime + ": " + goal.getName() + " (" + getHours() + " hours)";
+    }
 }

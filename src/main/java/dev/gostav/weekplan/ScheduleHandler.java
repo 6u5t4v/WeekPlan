@@ -1,8 +1,10 @@
 package dev.gostav.weekplan;
 
 import dev.gostav.weekplan.model.Goal;
+import dev.gostav.weekplan.model.Schedule;
 import dev.gostav.weekplan.model.Task;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -24,16 +26,14 @@ public class ScheduleHandler {
 
     };
 
-    Map<Integer, List<Task>> schedule = new HashMap<>();
-
     private void initializeGoals() {
         // Add your goals with their respective minimum hours per week
-        GOALS.add(new Goal("Goal 1", 10, true));  // Daily goal
-        GOALS.add(new Goal("Goal 2", 10, false));  // Non-daily goal
-        GOALS.add(new Goal("Goal 3", 10, false));  // Non-daily goal
-        GOALS.add(new Goal("Goal 4", 10, true));   // Daily goal
-        GOALS.add(new Goal("Goal 5", 10, false));  // Non-daily goal
-        GOALS.add(new Goal("Goal 6", 10, true));   // Daily goal
+        GOALS.add(new Goal("Hobby Project", 10, true));  // Daily goal
+        GOALS.add(new Goal("Time sensitive Project", 10, false));  // Non-daily goal
+        GOALS.add(new Goal("Practice Guitar", 7, false));  // Non-daily goal
+        GOALS.add(new Goal("Marketing Company", 10, true));   // Daily goal
+        GOALS.add(new Goal("Outside", 20, false));  // Non-daily goal
+        GOALS.add(new Goal("Gaming", 8, true));   // Daily goal
 
         final int hoursInAWeek = 168;
         if (getTotalGoalsHours() > hoursInAWeek) {
@@ -45,30 +45,33 @@ public class ScheduleHandler {
         List<Task> tasks = new ArrayList<>();
 
         int timeOfDay = 0;
-        while (timeOfDay < ROUTINES.length - 1) {
-            LocalTime time = ROUTINES[timeOfDay];
 
-            Goal goal = selectGoal();
+        Goal goal = null;
+        int maxSeconds = 0;
+
+        while (timeOfDay < ROUTINES.length - 1) {
+            LocalTime time = ROUTINES[timeOfDay], nextRoutine = ROUTINES[timeOfDay + 1];
+
+            int seconds;
+
+            // the subtraction of 30 minutes is to make sure that the next routine is not too close
+            long untilNextTask = time.until(nextRoutine, ChronoUnit.SECONDS) - 60 * 30;
+
+            if (maxSeconds < 3600) {
+                maxSeconds = (int) (Math.random() * 3600 * 5) + 3600;
+                goal = null;
+            }
+
+            seconds = (int) Math.min(maxSeconds, untilNextTask);
+            maxSeconds -= seconds;
 
             if (goal == null) {
-                System.out.println("All goals have been scheduled");
-                break;
+                goal = selectGoal();
             }
 
-            int secondsRemaining = goal.getSecondsRemaining();
+            goal.scheduleWithSeconds(seconds);
 
-            try {
-                LocalTime nextRoutine = ROUTINES[timeOfDay + 1];
-                long untilNextTask = time.until(nextRoutine, ChronoUnit.SECONDS);
-
-                secondsRemaining = Math.min(secondsRemaining, (int) (untilNextTask - 60 * 30));
-            } catch (Exception e) {
-                System.out.println("No more routines for today");
-            }
-
-            goal.subtractSeconds(secondsRemaining);
-
-            int hours = secondsRemaining / 3600;
+            int hours = seconds / 3600;
             Task task = new Task(goal, time, time.plusHours(hours));
             tasks.add(task);
 
@@ -78,23 +81,26 @@ public class ScheduleHandler {
         return tasks;
     }
 
-    public Map<Integer, List<Task>> createSchedule() {
-        for (int day = 1; day <= 7; day++) {
-            schedule.put(day, createDaySchedule());
-        }
-
-        return schedule;
+    public void printTotalHoursScheduled(Schedule schedule) {
+        System.out.println("Total hours scheduled: " + schedule.getTotalHours() + " / " + getTotalGoalsHours());
     }
 
-    private List<Goal> getDailyGoals() {
-        List<Goal> dailyGoals = new ArrayList<>();
+    public void printGoalTimes() {
         for (Goal g : GOALS) {
-            if (g.isDailyGoal()) {
-                dailyGoals.add(g);
-            }
+            System.out.println(g.getName() + ": " + g.getHoursScheduled() + " hours" + (g.isComplete() ? " (Complete)" : ""));
+        }
+    }
+
+    public Schedule createSchedule(LocalDate startDate, LocalDate endDate) {
+        final Map<Integer, List<Task>> schedule = new HashMap<>();
+
+        int days = (int) ChronoUnit.DAYS.between(startDate, endDate);
+        for (int i = 1; i <= days; i++) {
+            List<Task> tasks = createDaySchedule();
+            schedule.put(i, tasks);
         }
 
-        return dailyGoals;
+        return new Schedule(startDate, endDate, schedule);
     }
 
     private int getTotalGoalsHours() {
@@ -110,7 +116,7 @@ public class ScheduleHandler {
         List<Goal> validGoals = GOALS.stream().filter(g -> !g.isComplete()).toList();
 
         if (validGoals.isEmpty()) {
-            return null;
+            validGoals = new ArrayList<>(GOALS);
         }
 
         int randomIndex = (int) (Math.random() * validGoals.size());

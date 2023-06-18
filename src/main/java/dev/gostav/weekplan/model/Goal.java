@@ -2,13 +2,13 @@ package dev.gostav.weekplan.model;
 
 public class Goal {
     private final String name;
-    private int minHoursPerWeek, secondsRemaning;
+    private final int minHoursPerWeek;
+    private int secondsScheduled;
     private final boolean isDailyGoal;
 
     public Goal(String name, int minHoursPerWeek, boolean isDailyGoal) {
         this.name = name;
         this.minHoursPerWeek = minHoursPerWeek;
-        this.secondsRemaning = minHoursPerWeek * 60 * 60;
         this.isDailyGoal = isDailyGoal;
     }
 
@@ -24,19 +24,23 @@ public class Goal {
         return isDailyGoal;
     }
 
-    public int getSecondsRemaining() {
-        return secondsRemaning;
+    public int getSecondsScheduled() {
+        return secondsScheduled;
     }
 
-    public void subtractSeconds(int seconds) {
-        this.secondsRemaning -= seconds;
+    public void scheduleWithSeconds(int seconds) {
+        this.secondsScheduled += seconds;
 
         if (isComplete()) {
-            System.out.println("Goal " + name + " is complete");
+            System.out.println("Goal " + name + " is overtime by " + Math.abs(secondsScheduled) + " seconds");
         }
     }
 
     public boolean isComplete() {
-        return secondsRemaning <= 0;
+        return secondsScheduled > minHoursPerWeek * 60 * 60;
+    }
+
+    public float getHoursScheduled() {
+        return secondsScheduled / 3600f;
     }
 }
