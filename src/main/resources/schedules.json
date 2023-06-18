@@ -2,8 +2,8 @@
   {
     "name": "Workday",
     "description": "A typical workday",
-    "morning": "09:00:00",
-    "night": "23:00:00",
+    "wake_up_time": "09:00:00",
+    "bed_time": "23:00:00",
     "routines": [
       "10:00:00",
       "14:00:00",
@@ -14,8 +14,8 @@
   {
     "name": "Offday",
     "description": "A typical offday, I dont have to work/school",
-    "morning": "10:00:00",
-    "night": "00:00:00",
+    "wake_up_time": "10:00:00",
+    "bed_time": "00:00:00",
     "routines": [
       "11:00:00",
       "15:00:00",

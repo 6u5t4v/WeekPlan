@@ -1,5 +1,7 @@
 package dev.gostav.weekplan.model;
 
+import dev.gostav.weekplan.Time;
+
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 
@@ -10,16 +12,13 @@ public class Task {
     public Task(Goal goal, LocalTime startTime, LocalTime endTime) {
         this.goal = goal;
         this.startTime = startTime;
-        this.endTime = endTime;
+        this.endTime = endTime.minusSeconds(endTime.getSecond());
     }
 
     public float getHours() {
-        // If endTime is before startTime, then the task is scheduled to the next day
-        if (startTime.getHour() > endTime.getHour()) {
-            return startTime.until(endTime, ChronoUnit.HOURS) + 1;
-        }
+        int durationInSeconds = (int) (startTime.until(endTime, ChronoUnit.SECONDS) + 1);
 
-        return endTime.getHour() - startTime.getHour();
+        return Time.toHours(durationInSeconds);
     }
 
     public Goal getGoal() {

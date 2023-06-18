@@ -1,15 +1,19 @@
 package dev.gostav.weekplan.model;
 
+import dev.gostav.weekplan.Time;
+
 public class Goal {
     private final String name;
     private final int minHoursPerWeek;
     private int secondsScheduled;
     private final boolean isDailyGoal;
+    private final int maxHoursPerDay;
 
-    public Goal(String name, int minHoursPerWeek, boolean isDailyGoal) {
+    public Goal(String name, int minHoursPerWeek, boolean isDailyGoal, int maxHoursPerDay) {
         this.name = name;
         this.minHoursPerWeek = minHoursPerWeek;
         this.isDailyGoal = isDailyGoal;
+        this.maxHoursPerDay = maxHoursPerDay;
     }
 
     public String getName() {
@@ -36,11 +40,15 @@ public class Goal {
         }
     }
 
+    public int getMaxHoursPerDay() {
+        return maxHoursPerDay;
+    }
+
     public boolean isComplete() {
-        return secondsScheduled > minHoursPerWeek * 60 * 60;
+        return secondsScheduled >= Time.toSeconds(minHoursPerWeek);
     }
 
     public float getHoursScheduled() {
-        return secondsScheduled / 3600f;
+        return Time.toHours(secondsScheduled);
     }
 }
